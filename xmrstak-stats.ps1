@@ -25,12 +25,23 @@ function Get-MinerData
   (
     [string]$user, 
     [string]$pass, 
-    [string]$url
+    [string]$miner,
+    [int]$minerport
   ) 
+  $responceData = ''
+  $apiurl = 'api.json'
   $securepasswd = ConvertTo-SecureString $pass -AsPlainText -Force
   $cred = New-Object System.Management.Automation.PSCredential($user, $securepasswd)
-  $responseData = Invoke-WebRequest -Uri $url -Credential $cred
-
+  $url = $("http://$miner",$minerport -join ':'),$apiurl -join '/'
+  try
+  {
+    $responseData = Invoke-WebRequest -Uri $url -Credential $cred -TimeoutSec 5
+  }
+  catch [System.Net.WebException]
+  {
+    Write-Verbose "An exception was caught connecting to $miner : $($_.Exception.Message)"
+  }
+      
   return $responseData
   }
 
@@ -39,10 +50,10 @@ If (!($Miners))
   $Miners = Get-MinersFromFile -Path $(Join-Path -Path $PSSCriptRoot -ChildPath 'xmrminers.txt' )
 }
  
-$username = 'user'
-$password = 'password'
-$apiurl = 'api.json'
-$minerport = '8888'
+$username = 'sir'
+$password = 'MoneroSIR18'
+
+$minerport = '1478'
 $stats = @()
 $total10s= 0
 $total60s= 0
@@ -50,24 +61,38 @@ $total15m= 0
 $totals = @()
 ForEach ($miner in $Miners)
 {
-  $url = $("http://$miner",$minerport -join ':'),$apiurl -join '/'
-  $rawdata = Get-MinerData -user $username -pass $password -url $url
-  $stats += [psCustomObject]@{
-      'miner' = $miner
-      'hashrate 10s' = [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[0]
-      'hashrate 60s' = [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[1]
-      'hashrate 15m' = [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[2]
-      'threads' = [int]$($rawdata.content|ConvertFrom-Json).hashrate.threads.count
+  
+  $rawdata = Get-MinerData -user $username -pass $password -miner $miner -minerport $minerport
+  If ($rawdata)
+  {
+    $stats += [psCustomObject]@{
+        'miner' = $miner
+        'hashrate 10s' = [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[0]
+        'hashrate 60s' = [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[1]
+        'hashrate 15m' = [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[2]
+        'threads' = [int]$($rawdata.content|ConvertFrom-Json).hashrate.threads.count
       
   }
-  $total10s += [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[0] 
-  $total60s += [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[1] 
-  $total15m += [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[2] 
+    $total10s += [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[0] 
+    $total60s += [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[1] 
+    $total15m += [int]$($rawdata.content|ConvertFrom-Json).hashrate.total[2] 
+  }
+  Else
+  {
+    $stats += [psCustomObject]@{
+        'miner' = $miner
+        'hashrate 10s' = 0
+        'hashrate 60s' = 0
+        'hashrate 15m' = 0
+        'threads' = 0
+    }
+  }
 }
 
 $stats.GetEnumerator()|Sort-Object -Property 'hashrate 15m' -Descending | Format-Table
 
 Write-Host $("Total miners:", $stats.Count -join ' ')
+
 
 $totals += [psCustomObject]@{
       'data' = 'Total'
