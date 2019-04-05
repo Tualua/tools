@@ -28,7 +28,7 @@ function Get-MinerData
     [string]$miner,
     [int]$minerport
   ) 
-  $responceData = ''
+  $responseData = ''
   $apiurl = 'api.json'
   $securepasswd = ConvertTo-SecureString $pass -AsPlainText -Force
   $cred = New-Object System.Management.Automation.PSCredential($user, $securepasswd)
@@ -50,10 +50,10 @@ If (!($Miners))
   $Miners = Get-MinersFromFile -Path $(Join-Path -Path $PSSCriptRoot -ChildPath 'xmrminers.txt' )
 }
  
-$username = 'sir'
-$password = 'MoneroSIR18'
+$username = ''
+$password = ''
 
-$minerport = '1478'
+$minerport = '8888'
 $stats = @()
 $total10s= 0
 $total60s= 0
