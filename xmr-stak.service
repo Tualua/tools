@@ -1,0 +1,23 @@
+[Unit]
+Description=xmr-stak daemon
+After=network.target
+After=systemd-user-sessions.service
+After=network-online.target
+
+[Service]
+Environment=GPU_FORCE_64BIT_PTR=1
+Environment=GPU_MAX_HEAP_SIZE=100
+Environment=GPU_MAX_ALLOC_PERCENT=100
+Environment=GPU_SINGLE_ALLOC_PERCENT=100
+User=miner
+Type=simple
+LimitMEMLOCK=256M
+RuntimeDirectory=xmr-stak
+RuntimeDirectoryMode=0750
+PIDFile=/run/xmr-stak/xmr-stack.pid
+ExecStart=/usr/bin/xmr-stak --config /etc/xmr-stak/xmr-stak.conf --cpu /etc/xmr-stak/cpu.conf --amd /etc/xmr-stak/amd.conf --poolconf /etc/xmr-stak/pools.conf
+ExecReload=/sbin/start-stop-daemon
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
